@@ -18,9 +18,11 @@
 pub mod constants;
 mod curve;
 mod error;
+mod fee;
 mod math;
 mod types;
 
 pub use curve::{fee_for, quote_buy_exact_in, quote_buy_exact_out, quote_sell};
 pub use error::CoreError;
+pub use fee::FeeSchedule;
 pub use types::{CurveParams, Quote, Reserves};

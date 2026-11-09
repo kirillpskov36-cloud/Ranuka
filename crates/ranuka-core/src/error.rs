@@ -8,8 +8,10 @@ pub enum CoreError {
     MathOverflow,
     /// More tokens requested than remain on the curve.
     InsufficientLiquidity,
-    /// Fee above `MAX_FEE_BPS`.
+    /// Fee above its hard cap.
     FeeTooHigh,
     /// The curve is complete; trading on it is closed.
     CurveComplete,
+    /// Fee schedule violates its hard caps or is internally inconsistent.
+    InvalidFeeSchedule,
 }

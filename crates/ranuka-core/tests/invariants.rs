@@ -4,7 +4,7 @@
 //! `ranuka-core` stays dependency-free and every failure is reproducible
 //! from its seed.
 
-use ranuka_core::constants::{DEFAULT_FEE_BPS, LAMPORTS_PER_SOL, MAX_FEE_BPS};
+use ranuka_core::constants::{DEFAULT_FEE_BPS, LAMPORTS_PER_SOL, MAX_FEE_BPS, MAX_LAUNCH_FEE_BPS};
 use ranuka_core::{
     quote_buy_exact_in, quote_buy_exact_out, quote_sell, CoreError, CurveParams, Reserves,
 };
@@ -59,7 +59,8 @@ fn check_step(before: &Reserves, after: &Reserves) {
 }
 
 /// Runs a random mix of trades and returns the final reserves.
-fn run_sequence(seed: u64, steps: usize, fee_bps: u16) -> Reserves {
+/// Buys and sells take separate fees: only buys can carry the launch fee.
+fn run_sequence(seed: u64, steps: usize, buy_fee_bps: u16, sell_fee_bps: u16) -> Reserves {
     let mut rng = Rng(seed);
     let mut r = Reserves::new(&PARAMS);
 
@@ -73,14 +74,14 @@ fn run_sequence(seed: u64, steps: usize, fee_bps: u16) -> Reserves {
         let result = match rng.next() % 3 {
             0 => {
                 let budget = rng.amount(5 * LAMPORTS_PER_SOL);
-                quote_buy_exact_in(&r, budget, fee_bps).map(|q| {
+                quote_buy_exact_in(&r, budget, buy_fee_bps).map(|q| {
                     assert!(q.buy_cost().unwrap() <= budget, "paid more than budget");
                     r.apply_buy(&q).unwrap()
                 })
             }
             1 => {
                 let tokens = rng.amount(r.real_token);
-                quote_buy_exact_out(&r, tokens, fee_bps).map(|q| {
+                quote_buy_exact_out(&r, tokens, buy_fee_bps).map(|q| {
                     assert_eq!(q.tokens, tokens);
                     r.apply_buy(&q).unwrap()
                 })
@@ -88,7 +89,7 @@ fn run_sequence(seed: u64, steps: usize, fee_bps: u16) -> Reserves {
             // Only tokens that left the curve can come back.
             _ if sold > 0 => {
                 let tokens = rng.amount(sold);
-                quote_sell(&r, tokens, fee_bps).map(|q| r.apply_sell(&q).unwrap())
+                quote_sell(&r, tokens, sell_fee_bps).map(|q| r.apply_sell(&q).unwrap())
             }
             _ => continue,
         };
@@ -109,8 +110,14 @@ fn run_sequence(seed: u64, steps: usize, fee_bps: u16) -> Reserves {
 #[test]
 fn invariants_hold_over_random_sequences() {
     for seed in 0..200 {
-        for fee_bps in [0, DEFAULT_FEE_BPS, MAX_FEE_BPS] {
-            run_sequence(seed, 500, fee_bps);
+        for (buy_fee, sell_fee) in [
+            (0, 0),
+            (DEFAULT_FEE_BPS, DEFAULT_FEE_BPS),
+            (MAX_FEE_BPS, MAX_FEE_BPS),
+            // Launch window: elevated buy fee, base sell fee.
+            (MAX_LAUNCH_FEE_BPS, DEFAULT_FEE_BPS),
+        ] {
+            run_sequence(seed, 500, buy_fee, sell_fee);
         }
     }
 }
@@ -120,7 +127,7 @@ fn invariants_hold_over_random_sequences() {
 #[test]
 fn pool_can_always_buy_back_everything() {
     for seed in 0..200 {
-        let r = run_sequence(seed, 300, DEFAULT_FEE_BPS);
+        let r = run_sequence(seed, 300, DEFAULT_FEE_BPS, DEFAULT_FEE_BPS);
         if r.is_complete() {
             continue;
         }

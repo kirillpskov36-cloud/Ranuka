@@ -6,12 +6,20 @@
 //! - whatever the pool gives out is rounded down, whatever it takes in is
 //!   rounded up.
 
-use crate::constants::{BPS_DENOMINATOR, MAX_FEE_BPS};
+use crate::constants::{BPS_DENOMINATOR, MAX_FEE_BPS, MAX_LAUNCH_FEE_BPS};
 use crate::error::CoreError;
 use crate::math::{mul_div_ceil, mul_div_floor};
 use crate::types::{Quote, Reserves};
 
-fn check_fee(fee_bps: u16) -> Result<(), CoreError> {
+/// Buys may carry the elevated launch fee; sells only ever pay the base fee.
+fn check_buy_fee(fee_bps: u16) -> Result<(), CoreError> {
+    if fee_bps > MAX_LAUNCH_FEE_BPS {
+        return Err(CoreError::FeeTooHigh);
+    }
+    Ok(())
+}
+
+fn check_sell_fee(fee_bps: u16) -> Result<(), CoreError> {
     if fee_bps > MAX_FEE_BPS {
         return Err(CoreError::FeeTooHigh);
     }
@@ -19,8 +27,10 @@ fn check_fee(fee_bps: u16) -> Result<(), CoreError> {
 }
 
 /// Fee on `sol` lamports moving through the curve: `ceil(sol * fee_bps / 10_000)`.
+///
+/// Accepts any rate up to `MAX_LAUNCH_FEE_BPS`, the highest the protocol can charge.
 pub fn fee_for(sol: u64, fee_bps: u16) -> Result<u64, CoreError> {
-    check_fee(fee_bps)?;
+    check_buy_fee(fee_bps)?;
     mul_div_ceil(sol, u64::from(fee_bps), u128::from(BPS_DENOMINATOR))
 }
 
@@ -57,7 +67,7 @@ fn sol_for_tokens_in(r: &Reserves, tokens: u64) -> Result<u64, CoreError> {
 /// to the remaining tokens and the cost shrinks accordingly; applying that
 /// quote completes the curve.
 pub fn quote_buy_exact_in(r: &Reserves, sol_in: u64, fee_bps: u16) -> Result<Quote, CoreError> {
-    check_fee(fee_bps)?;
+    check_buy_fee(fee_bps)?;
     if r.is_complete() {
         return Err(CoreError::CurveComplete);
     }
@@ -94,7 +104,7 @@ pub fn quote_buy_exact_out(
     tokens_out: u64,
     fee_bps: u16,
 ) -> Result<Quote, CoreError> {
-    check_fee(fee_bps)?;
+    check_buy_fee(fee_bps)?;
     if r.is_complete() {
         return Err(CoreError::CurveComplete);
     }
@@ -118,7 +128,7 @@ pub fn quote_buy_exact_out(
 ///
 /// A sale whose proceeds after the fee would be zero is `ZeroAmount`.
 pub fn quote_sell(r: &Reserves, tokens_in: u64, fee_bps: u16) -> Result<Quote, CoreError> {
-    check_fee(fee_bps)?;
+    check_sell_fee(fee_bps)?;
     if r.is_complete() {
         return Err(CoreError::CurveComplete);
     }
@@ -206,7 +216,7 @@ impl Reserves {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::constants::{DEFAULT_FEE_BPS, LAMPORTS_PER_SOL, TOKEN_UNIT};
+    use crate::constants::{DEFAULT_FEE_BPS, LAMPORTS_PER_SOL, MAX_LAUNCH_FEE_BPS, TOKEN_UNIT};
     use crate::types::CurveParams;
 
     const FEE: u16 = DEFAULT_FEE_BPS;
@@ -225,9 +235,22 @@ mod tests {
         assert_eq!(fee_for(LAMPORTS_PER_SOL, 0), Ok(0));
         assert_eq!(fee_for(LAMPORTS_PER_SOL, MAX_FEE_BPS), Ok(10_000_000));
         assert_eq!(
-            fee_for(LAMPORTS_PER_SOL, MAX_FEE_BPS + 1),
+            fee_for(LAMPORTS_PER_SOL, MAX_LAUNCH_FEE_BPS),
+            Ok(LAMPORTS_PER_SOL / 2)
+        );
+        assert_eq!(
+            fee_for(LAMPORTS_PER_SOL, MAX_LAUNCH_FEE_BPS + 1),
             Err(CoreError::FeeTooHigh)
         );
+    }
+
+    #[test]
+    fn launch_fee_buy_stays_within_budget() {
+        // At the 50% launch fee a third of the budget goes to the fee.
+        let q = quote_buy_exact_in(&fresh(), 3 * LAMPORTS_PER_SOL, MAX_LAUNCH_FEE_BPS).unwrap();
+        assert_eq!(q.sol, 2 * LAMPORTS_PER_SOL);
+        assert_eq!(q.fee, LAMPORTS_PER_SOL);
+        assert_eq!(q.buy_cost(), Ok(3 * LAMPORTS_PER_SOL));
     }
 
     #[test]
@@ -348,16 +371,20 @@ mod tests {
     #[test]
     fn fee_above_cap_is_rejected_everywhere() {
         let r = fresh();
-        let bad = MAX_FEE_BPS + 1;
+        let bad_buy = MAX_LAUNCH_FEE_BPS + 1;
         assert_eq!(
-            quote_buy_exact_in(&r, LAMPORTS_PER_SOL, bad),
+            quote_buy_exact_in(&r, LAMPORTS_PER_SOL, bad_buy),
             Err(CoreError::FeeTooHigh)
         );
         assert_eq!(
-            quote_buy_exact_out(&r, TOKEN_UNIT, bad),
+            quote_buy_exact_out(&r, TOKEN_UNIT, bad_buy),
             Err(CoreError::FeeTooHigh)
         );
-        assert_eq!(quote_sell(&r, TOKEN_UNIT, bad), Err(CoreError::FeeTooHigh));
+        // Sells are capped at the base fee, never the launch fee.
+        assert_eq!(
+            quote_sell(&r, TOKEN_UNIT, MAX_FEE_BPS + 1),
+            Err(CoreError::FeeTooHigh)
+        );
     }
 
     #[test]
