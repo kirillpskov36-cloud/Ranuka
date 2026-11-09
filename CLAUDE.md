@@ -19,6 +19,7 @@ Read `docs/architecture.md` first, then `docs/decisions.md`.
 ## Commands
 
 ```sh
+anchor build --ignore-keys # build the program; its tests load the compiled .so
 ./scripts/check.sh        # fmt + clippy (-D warnings) + tests; must pass before every commit
 ./scripts/check-env.sh    # verify local toolchain
 cargo test -p ranuka-core # one crate
@@ -49,3 +50,11 @@ The program and the SDK never depend on each other's code.
   frozen; new behavior goes into new instructions. Error codes are append-only.
 - External dependencies are declared in the root `[workspace.dependencies]`.
 - Never commit keypairs or `.env` files.
+
+## Branches and CI
+
+- Work happens on `wip/*` branches; `main` only moves to commits with green CI.
+- CI is the only place the program is built. It commits `Cargo.lock` updates
+  back to `wip/*` branches, so pull before adding commits.
+- The program id in `declare_id!` and `Anchor.toml` is a placeholder until the
+  first devnet deploy; do not generate or commit a program keypair.
