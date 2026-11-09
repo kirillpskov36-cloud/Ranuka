@@ -193,6 +193,7 @@ ranuka/
 ├── crates/ranuka-cli/        бинарник `ranuka`
 ├── programs/ranuka-program/  on-chain программа
 ├── docs/architecture.md      этот файл
+├── docs/code-map.md          устройство кода: файлы, связи, проверки
 ├── docs/decisions.md         журнал решений
 ├── Anchor.toml               настройки Anchor
 ├── scripts/check.sh          все проверки одной командой

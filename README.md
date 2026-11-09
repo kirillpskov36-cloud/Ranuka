@@ -10,6 +10,7 @@ Launchpad на Solana с бондинговой кривой. Главный п�
 ## Документы
 
 - [docs/architecture.md](docs/architecture.md) — как устроен проект. Начинать отсюда.
+- [docs/code-map.md](docs/code-map.md) — как устроен код: файлы, связи, проверки.
 - [docs/decisions.md](docs/decisions.md) — журнал решений: что выбрали и почему.
 - [CLAUDE.md](CLAUDE.md) — правила работы над кодом.
 

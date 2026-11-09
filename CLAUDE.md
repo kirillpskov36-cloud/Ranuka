@@ -3,7 +3,7 @@
 Solana bonding-curve launchpad. The product is the on-chain program plus a
 bot-facing SDK; the TUI is a second client on top of the same SDK.
 
-Read `docs/architecture.md` first, then `docs/decisions.md`.
+Read `docs/architecture.md` first, then `docs/code-map.md` and `docs/decisions.md`.
 
 ## How we work
 
@@ -14,6 +14,8 @@ Read `docs/architecture.md` first, then `docs/decisions.md`.
 - Any decision that changes architecture, economics or the public interface
   gets an entry in `docs/decisions.md`, and `docs/architecture.md` is updated
   in the same change.
+- `docs/code-map.md` describes every file. Update it in the same change
+  whenever a file, public item, instruction or test group is added or removed.
 - Never start work that needs a product decision by guessing: ask the owner.
 
 ## Commands
