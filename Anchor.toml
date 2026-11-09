@@ -1,0 +1,16 @@
+[toolchain]
+
+[features]
+resolution = true
+skip-lint = false
+
+# Placeholder program id; replaced by the real one at the first devnet deploy.
+[programs.localnet]
+ranuka_program = "FG1nc4Q59Z78LvSYq97JMGhBCH2o4yzzvuM1K8xUt6NU"
+
+[provider]
+cluster = "localnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "cargo test"

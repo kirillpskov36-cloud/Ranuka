@@ -4,11 +4,31 @@ description = "Ranuka on-chain program (Anchor)"
 version.workspace = true
 edition.workspace = true
 
-# Placeholder until milestone 2, which adds:
-#   [lib] crate-type = ["cdylib", "lib"]
-#   anchor-lang, anchor-spl
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "ranuka_program"
+
+# Feature set expected by Anchor's macros and CLI.
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build"]
+anchor-debug = []
+custom-heap = []
+custom-panic = []
+
 [dependencies]
+anchor-lang = { workspace = true, features = ["event-cpi"] }
 ranuka-core.workspace = true
+
+[dev-dependencies]
+litesvm = "0.10.0"
+solana-message = "3.0.1"
+solana-transaction = "3.0.2"
+solana-signer = "3.0.0"
+solana-keypair = "3.0.1"
 
 [lints]
 workspace = true

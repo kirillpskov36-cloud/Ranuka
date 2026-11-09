@@ -1,28 +1,57 @@
-# Runs the same checks as scripts/check.sh on every push to main and every PR.
-# Milestone 2 adds the Solana toolchain here to build and test the program.
+# Builds the on-chain program, then runs the same checks as scripts/check.sh.
+# The program tests load the compiled program, so the build comes first.
 
 name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "wip/**"]
   pull_request:
+
+# Needed only to commit an updated Cargo.lock back to a work branch.
+permissions:
+  contents: write
 
 env:
   CARGO_TERM_COLOR: always
+  NO_DNA: "1"
 
 jobs:
   check:
-    name: fmt, clippy, test
+    name: build, fmt, clippy, test
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
+      - name: Install Solana toolchain (Rust, Solana CLI, Anchor)
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSfL https://solana-install.solana.workers.dev | bash
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.avm/bin" >> "$GITHUB_PATH"
+
+      - name: Versions
+        run: rustc --version && solana --version && anchor --version
 
       - uses: Swatinem/rust-cache@v2
 
+      # --ignore-keys: the program id is a placeholder until the first deploy.
+      - name: Build program
+        run: anchor build --ignore-keys
+
       - name: Check
         run: ./scripts/check.sh
+
+      # Dependencies are resolved here, not on the author's machine, so a work
+      # branch gets its lockfile updates committed back automatically.
+      - name: Commit updated Cargo.lock
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/wip/')
+        run: |
+          if ! git diff --quiet -- Cargo.lock; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add Cargo.lock
+            git commit -m "Update Cargo.lock"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi

@@ -16,11 +16,14 @@ edition = "2021"
 [workspace.dependencies]
 ranuka-core = { path = "crates/ranuka-core" }
 ranuka-sdk = { path = "crates/ranuka-sdk" }
+anchor-lang = "1.1.2"
 
 # Shared lint policy; each crate opts in with `[lints] workspace = true`.
 # Stricter, crate-specific rules live in that crate's lib.rs.
 [workspace.lints.rust]
 unused_must_use = "deny"
+# Anchor's macros test for the on-chain target.
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }
 
 [workspace.lints.clippy]
 dbg_macro = "deny"
@@ -28,5 +31,13 @@ todo = "warn"
 unimplemented = "warn"
 
 # Money math must never wrap silently, even in optimized builds.
+# The remaining settings are Anchor's defaults for small on-chain binaries.
 [profile.release]
 overflow-checks = true
+lto = "fat"
+codegen-units = 1
+
+[profile.release.build-override]
+opt-level = 3
+incremental = false
+codegen-units = 1
