@@ -1,0 +1,15 @@
+[package]
+name = "ranuka-cli"
+description = "Ranuka client: headless commands and TUI"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "ranuka"
+path = "src/main.rs"
+
+[dependencies]
+ranuka-sdk.workspace = true
+
+[lints]
+workspace = true

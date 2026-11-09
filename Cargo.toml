@@ -1,0 +1,32 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/ranuka-core",
+    "crates/ranuka-sdk",
+    "crates/ranuka-cli",
+    "programs/ranuka-program",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+
+# Internal crates are declared once here and pulled in with `.workspace = true`.
+# External dependencies go here too, so every crate uses the same version.
+[workspace.dependencies]
+ranuka-core = { path = "crates/ranuka-core" }
+ranuka-sdk = { path = "crates/ranuka-sdk" }
+
+# Shared lint policy; each crate opts in with `[lints] workspace = true`.
+# Stricter, crate-specific rules live in that crate's lib.rs.
+[workspace.lints.rust]
+unused_must_use = "deny"
+
+[workspace.lints.clippy]
+dbg_macro = "deny"
+todo = "warn"
+unimplemented = "warn"
+
+# Money math must never wrap silently, even in optimized builds.
+[profile.release]
+overflow-checks = true

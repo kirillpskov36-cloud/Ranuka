@@ -1,0 +1,12 @@
+[package]
+name = "ranuka-core"
+description = "Ranuka bonding-curve math: quotes, fees, curve parameters"
+version.workspace = true
+edition.workspace = true
+
+# No dependencies by design: this crate knows nothing about Solana
+# and must build anywhere, including inside the on-chain program.
+[dependencies]
+
+[lints]
+workspace = true

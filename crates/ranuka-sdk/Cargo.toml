@@ -1,0 +1,17 @@
+[package]
+name = "ranuka-sdk"
+description = "Ranuka SDK: the bot-facing API (PDAs, instructions, decoders, events)"
+version.workspace = true
+edition.workspace = true
+
+# Offline modules (pda, math, ix, accounts, events) build with no features.
+# `rpc` adds the networked modules (stream, client) and their async runtime.
+[features]
+default = []
+rpc = []
+
+[dependencies]
+ranuka-core.workspace = true
+
+[lints]
+workspace = true

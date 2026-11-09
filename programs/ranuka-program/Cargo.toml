@@ -1,0 +1,14 @@
+[package]
+name = "ranuka-program"
+description = "Ranuka on-chain program (Anchor)"
+version.workspace = true
+edition.workspace = true
+
+# Placeholder until milestone 2, which adds:
+#   [lib] crate-type = ["cdylib", "lib"]
+#   anchor-lang, anchor-spl
+[dependencies]
+ranuka-core.workspace = true
+
+[lints]
+workspace = true

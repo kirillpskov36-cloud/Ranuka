@@ -1,0 +1,28 @@
+# Runs the same checks as scripts/check.sh on every push to main and every PR.
+# Milestone 2 adds the Solana toolchain here to build and test the program.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    name: fmt, clippy, test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Check
+        run: ./scripts/check.sh
