@@ -236,7 +236,7 @@ mod tests {
         assert_eq!(fee_for(LAMPORTS_PER_SOL, MAX_FEE_BPS), Ok(10_000_000));
         assert_eq!(
             fee_for(LAMPORTS_PER_SOL, MAX_LAUNCH_FEE_BPS),
-            Ok(LAMPORTS_PER_SOL / 2)
+            Ok(LAMPORTS_PER_SOL / 10)
         );
         assert_eq!(
             fee_for(LAMPORTS_PER_SOL, MAX_LAUNCH_FEE_BPS + 1),
@@ -246,11 +246,11 @@ mod tests {
 
     #[test]
     fn launch_fee_buy_stays_within_budget() {
-        // At the 50% launch fee a third of the budget goes to the fee.
-        let q = quote_buy_exact_in(&fresh(), 3 * LAMPORTS_PER_SOL, MAX_LAUNCH_FEE_BPS).unwrap();
-        assert_eq!(q.sol, 2 * LAMPORTS_PER_SOL);
+        // At the 10% launch fee one eleventh of the budget goes to the fee.
+        let q = quote_buy_exact_in(&fresh(), 11 * LAMPORTS_PER_SOL, MAX_LAUNCH_FEE_BPS).unwrap();
+        assert_eq!(q.sol, 10 * LAMPORTS_PER_SOL);
         assert_eq!(q.fee, LAMPORTS_PER_SOL);
-        assert_eq!(q.buy_cost(), Ok(3 * LAMPORTS_PER_SOL));
+        assert_eq!(q.buy_cost(), Ok(11 * LAMPORTS_PER_SOL));
     }
 
     #[test]

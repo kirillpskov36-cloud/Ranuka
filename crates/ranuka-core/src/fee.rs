@@ -94,18 +94,18 @@ mod tests {
 
     #[test]
     fn starts_at_launch_fee_and_ends_at_base_fee() {
-        assert_eq!(S.buy_fee_bps(0), Ok(5_000));
-        assert_eq!(S.buy_fee_bps(150), Ok(30));
-        assert_eq!(S.buy_fee_bps(151), Ok(30));
+        assert_eq!(S.buy_fee_bps(0), Ok(1_000));
+        assert_eq!(S.buy_fee_bps(25), Ok(30));
+        assert_eq!(S.buy_fee_bps(26), Ok(30));
         assert_eq!(S.buy_fee_bps(u64::MAX), Ok(30));
     }
 
     #[test]
     fn midpoint_matches_reference() {
-        // 30 + ceil(4970 * 75 / 150) = 2515
-        assert_eq!(S.buy_fee_bps(75), Ok(2_515));
-        // 30 + ceil(4970 * 1 / 150) = 30 + 34 = 64
-        assert_eq!(S.buy_fee_bps(149), Ok(64));
+        // 30 + ceil(970 * 13 / 25) = 30 + 505 = 535
+        assert_eq!(S.buy_fee_bps(12), Ok(535));
+        // 30 + ceil(970 * 1 / 25) = 30 + 39 = 69
+        assert_eq!(S.buy_fee_bps(24), Ok(69));
     }
 
     #[test]
