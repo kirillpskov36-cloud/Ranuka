@@ -1,0 +1,46 @@
+# Temporary: prints the current Anchor project template so the program can be
+# written against the real API. Lives only on the probe branch.
+name: Probe
+on:
+  push:
+    branches: ["probe/**"]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      NO_DNA: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Solana toolchain
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSfL https://solana-install.solana.workers.dev | bash
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.avm/bin" >> "$GITHUB_PATH"
+      - name: Versions
+        run: |
+          rustc --version; cargo --version; solana --version; anchor --version; avm --version || true
+          avm list || true
+          which anchor solana cargo-build-sbf || true
+          anchor init --help || true
+          anchor test --help || true
+          anchor build --help || true
+      - name: Init template
+        run: |
+          cd "$RUNNER_TEMP"
+          anchor init probe --no-git || anchor init probe
+          cd probe
+          find . -type f -not -path './node_modules/*' -not -path './target/*' -not -path './.git/*' -not -name '*.lock' -not -name 'yarn.lock' | sort | while read -r f; do
+            echo "=====FILE $f"
+            cat "$f"
+            echo
+          done
+      - name: Build and test template
+        run: |
+          cd "$RUNNER_TEMP/probe"
+          anchor build
+          ls -la target/deploy target/idl || true
+          cargo test -- --nocapture || true
+          echo "=====Cargo.lock anchor/solana/litesvm versions"
+          grep -A1 -E '^name = "(anchor-lang|anchor-spl|litesvm|solana-program|solana-sdk|mpl-token-metadata|spl-token|borsh)"' Cargo.lock || true
