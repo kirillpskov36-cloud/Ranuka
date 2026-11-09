@@ -49,8 +49,10 @@ fn set_program_data(svm: &mut LiteSVM, address: Pubkey, authority: Option<Pubkey
         }
     }
 
-    // Fund the address first so there is an account value to edit.
-    svm.airdrop(&address, SOL).unwrap();
+    // Fund the address on first use so there is an account value to edit.
+    if svm.get_account(&address).is_none() {
+        svm.airdrop(&address, SOL).unwrap();
+    }
     let mut account = svm.get_account(&address).unwrap();
     account.data = data;
     account.owner = UPGRADEABLE_LOADER_ID;
