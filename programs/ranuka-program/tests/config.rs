@@ -1,5 +1,6 @@
 //! Global config: initialization, fee schedule updates and admin transfer.
-//! Runs the compiled program in LiteSVM; build it first with `anchor build`.
+//! Runs the compiled program in LiteSVM; build it first with
+//! `anchor build --ignore-keys` (scripts/check.sh does this when Anchor is installed).
 
 use {
     anchor_lang::{
@@ -62,11 +63,12 @@ fn set_program_data(svm: &mut LiteSVM, address: Pubkey, authority: Option<Pubkey
 fn setup() -> Env {
     let program_id = ranuka_program::id();
     let mut svm = LiteSVM::new();
-    let bytes = include_bytes!(concat!(
-        env!("CARGO_TARGET_TMPDIR"),
-        "/../deploy/ranuka_program.so"
-    ));
-    svm.add_program(program_id, bytes).unwrap();
+    // Loaded at run time, so the tests still compile before the program is built.
+    let path = concat!(env!("CARGO_TARGET_TMPDIR"), "/../deploy/ranuka_program.so");
+    let bytes = std::fs::read(path).unwrap_or_else(|_| {
+        panic!("compiled program not found at {path}; run `anchor build --ignore-keys` first")
+    });
+    svm.add_program(program_id, &bytes).unwrap();
 
     let deployer = Keypair::new();
     svm.airdrop(&deployer.pubkey(), 10 * SOL).unwrap();

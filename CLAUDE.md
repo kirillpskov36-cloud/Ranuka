@@ -19,8 +19,8 @@ Read `docs/architecture.md` first, then `docs/decisions.md`.
 ## Commands
 
 ```sh
-anchor build --ignore-keys # build the program; its tests load the compiled .so
-./scripts/check.sh        # fmt + clippy (-D warnings) + tests; must pass before every commit
+./scripts/check.sh        # program build + fmt + clippy (-D warnings) + tests; must pass before every commit
+                          # without Anchor installed it skips the program tests and says so
 ./scripts/check-env.sh    # verify local toolchain
 cargo test -p ranuka-core # one crate
 ```

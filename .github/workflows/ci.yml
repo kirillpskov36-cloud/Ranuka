@@ -36,10 +36,8 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      # --ignore-keys: the program id is a placeholder until the first deploy.
-      - name: Build program
-        run: anchor build --ignore-keys
-
+      # Builds the program first (with --ignore-keys: the program id is a
+      # placeholder until the first deploy), then runs fmt, clippy and tests.
       - name: Check
         run: ./scripts/check.sh
 
